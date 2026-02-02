@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Утечка данных</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Courier New', monospace;
+        }
+        body {
+            background-color: #000; /* Чёрный фон */
+            color: #fff;
+            text-align: center;
+            min-height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
+        /* Кнопка на главной */
+        .btn {
+            display: inline-block;
+            margin-top: 20vh;
+            padding: 15px 30px;
+            background-color: #fff;
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn:hover {
+            background-color: #333;
+            color: #fff;
+            transform: scale(1.05);
+        }
+        /* Всплывающее окно */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.95);
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .modal-content {
+            background-color: #111;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 600px;
+            text-align: center;
+        }
+        .close {
+            color: #fff;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        /* Заголовок об утечке */
+        .leak-title {
+            font-size: 16px;
+            color: #fff;
+            margin: 25px 0 15px;
+            font-weight: bold;
+            text-shadow: 0 0 5px rgba(0, 255, 0, 0.7);
+        }
+        /* Описание утечки */
+        .leak-desc {
+            font-size: 14px;
+            color: #ccc;
+            line-height: 1.6;
+            margin: 10px 0;
+            text-align: left;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        /* Предупреждающее сообщение */
+        .warning {
+            font-size: 12px;
+            color: #ff0000; /* Красный */
+            margin: 25px 0 0;
+            line-height: 1.5;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        /* Красный восклицательный знак */
+        .alert-symbol {
+            font-size: 60px; /* Значительно увеличен */
+            color: #ff0000; /* Яркий красный */
+            margin: 40px auto;
+            display: block;
+            text-align: center;
+        }
+        /* Подпись о количестве пользователей */
+        .user-count {
+            font-size: 14px;
+            color: #ff0000; /* Красный */
+            margin-top: 30px;
+            font-weight: bold;
+            text-align: center;
+        }
+        /* NFT‑элементы (имитация) */
+        .nft {
+            position: absolute;
+            opacity: 0.6;
+            animation: float 6s infinite ease-in-out;
+            filter: brightness(1.2);
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(5deg); }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Главная страница -->
+<button class="btn" onclick="handleClick()">Нажми для доступа</button>
+
+<!-- Всплывающее окно -->
+<div id="myModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal()">×</span>
+
+        <!-- Большой восклицательный знак -->
+        <div class="alert-symbol">!</div>
+
+        <!-- Заголовок об утечке -->
+        <h2 class="leak-title">Утечка SQL‑дампа Telegram</h2>
+
+        <!-- Описание утечки -->
+        <div class="leak-desc">
+            <p>250 000 записей</p>
+            <p><strong>Поля:</strong> email, хеш пароля (MD5), телефон, адрес</p>
+            <p>Файл размещён на форуме XDarkNet.</p>
+            <p>Рекомендация: срочно сбросить пароли и отозвать API‑ключи</p>
+        </div>
+
+        <!-- Предупреждающее сообщение (красный текст) -->
+        <p class="warning">
+            Мы знаем всё о вас. <span style="color: #ff0000;">Ваши данные у злоумышленников.</span><br>
+            Хотите предотвратить слив? Свяжитесь с нами в Telegram: @Wikipedia00011<br>
+            Время ограничено!
+        </p>
+
+        <!-- Подпись о количестве пользователей внизу окна -->
+        <div class="user-count">
+            Пользователей с утечкой данных: <span id="counter">0</span>
+        </div>
+    </div>
+</div>
+
+<!-- NFT‑элементы (пример) -->
+<img src="https://via.placeholder.com/60?text=NFT" alt="NFT" class="nft" style="top:10%; left:5%;">
+<img src="https://via.placeholder.com/60?text=₿" alt="Bitcoin" class="nft" style="top:30%; right:10%;">
+<img src="https://via.placeholder.com/60?text=💎" alt="Gem" class="nft" style="bottom:20%; left:20%;">
+<img src="https://via.placeholder.com/60?text=🤖" alt="Robot" class="nft" style="bottom:40%; right:30%;">
+<img src="https://via.placeholder.com/60?text=⚡" alt="Lightning" class="nft" style="top:50%; right:5%;">
+
+<script>
+    // Инициализация счётчика при загрузке страницы
+    let clickCount = parseInt(localStorage.getItem('clickCount')) || 0;
+    document.getElementById('counter').textContent = clickCount;
+
+    // Функция обработки клика
+    function handleClick() {
+        // Увеличиваем счётчик
+        clickCount++;
+        
+        // Сохраняем в localStorage
+        localStorage.setItem('clickCount', clickCount);
+        
+        // Обновляем отображение
+        document.getElementById('counter').textContent = clickCount;
+        
+        // Открываем модальное окно
+        openModal();
+    }
+
+    function openModal() {
+        document.getElementById('myModal').style.display = 'block';
+    }
+
+    function closeModal() {
+        document.getElementById('myModal').style.display = 'none';
+    }
+
+    // Закрытие окна при клике вне контента
+    window.onclick = function(event) {
+        let modal = document.getElementById('myModal');
+        if (event.target == modal) {
+            modal.style.display = 'none';
+        }
+    }
+</script>
+
+</body>
+</html>
